@@ -1,0 +1,22 @@
+server:
+  port: 4556
+  shutdown: "graceful"
+
+hmcts:
+  common:
+    exceptions:
+      enable-exception-handler: true
+
+management:
+  endpoint:
+    health:
+      show-details: "always"
+  endpoints:
+    web:
+      base-path: /
+      exposure:
+        include: health, info, prometheus
+
+spring:
+  application:
+    name: Opal RM Service

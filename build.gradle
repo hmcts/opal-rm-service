@@ -1,0 +1,74 @@
+plugins {
+  id 'application'
+  id 'jacoco'
+  id 'io.spring.dependency-management' version '1.1.7'
+  id 'org.springframework.boot' version '4.0.5'
+  id 'uk.gov.hmcts.java' version '0.12.68'
+}
+
+group = 'uk.gov.hmcts'
+version = '0.0.1'
+
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(21)
+  }
+}
+
+ext {
+  lombokVersion = '1.18.46'
+  mapstructVersion = '1.6.3'
+}
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+  maven {
+    url = uri('https://pkgs.dev.azure.com/hmcts/Artifacts/_packaging/hmcts-lib/maven/v1')
+  }
+}
+
+tasks.withType(JavaCompile).configureEach {
+  options.compilerArgs << "-Xlint:unchecked" << "-Werror"
+}
+
+tasks.withType(JavaExec).configureEach {
+  javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
+}
+
+tasks.withType(Test).configureEach {
+  useJUnitPlatform()
+
+  testLogging {
+    exceptionFormat = 'full'
+  }
+}
+
+dependencyCheck {
+  suppressionFile = 'config/owasp/suppressions.xml'
+}
+
+dependencies {
+  implementation 'org.springframework.boot:spring-boot-starter-web'
+  implementation 'org.springframework.boot:spring-boot-starter-actuator'
+  implementation 'uk.gov.hmcts:spring-exception-handler:1.0.1'
+
+  compileOnly "org.projectlombok:lombok:${lombokVersion}"
+  annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+  implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+  annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+
+  testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+  testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+  testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+}
+
+application {
+  mainClass.set('uk.gov.hmcts.opal.rm.Application')
+}
+
+wrapper {
+  distributionType = Wrapper.DistributionType.ALL
+}
