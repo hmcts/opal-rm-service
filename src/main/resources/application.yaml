@@ -11,6 +11,9 @@ management:
   endpoint:
     health:
       show-details: "always"
+      group:
+        readiness:
+          include: "db"
   endpoints:
     web:
       base-path: /
@@ -18,5 +21,35 @@ management:
         include: health, info, prometheus
 
 spring:
+  config:
+    import: "optional:configtree:/mnt/secrets/opal/"
   application:
     name: Opal RM Service
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${OPAL_RM_DB_HOST:localhost}:${OPAL_RM_DB_PORT:5437}/${OPAL_RM_DB_NAME:opal-rm-db}${OPAL_RM_DB_OPTIONS:}
+    username: ${OPAL_RM_DB_USERNAME:opal-rm}
+    password: ${OPAL_RM_DB_PASSWORD:opal-rm}
+    properties:
+      charSet: UTF-8
+    hikari:
+      minimumIdle: 2
+      maximumPoolSize: 10
+      idleTimeout: 10000
+      poolName: OpalRmHikariCP
+      maxLifetime: 7200000
+      connectionTimeout: 30000
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  flyway:
+    url: ${spring.datasource.url}
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+    locations: ${FLYWAY_LOCATIONS:classpath:db/migration/allEnvs}
+    baseline-on-migrate: true
+    ignore-migration-patterns: "*:missing"

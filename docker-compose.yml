@@ -1,0 +1,47 @@
+services:
+  opal-rm-service:
+    container_name: opal-rm-service
+    build:
+      context: .
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    environment:
+      - ROOT_APPENDER
+      - LOGBACK_REQUIRE_THREAD
+      - LOGBACK_REQUIRE_ALERT_LEVEL=false
+      - LOGBACK_REQUIRE_ERROR_CODE=false
+      - OPAL_RM_DB_HOST=opal-rm-db
+      - OPAL_RM_DB_PORT=5432
+      - OPAL_RM_DB_NAME=opal-rm-db
+      - OPAL_RM_DB_USERNAME=opal-rm
+      - OPAL_RM_DB_PASSWORD=opal-rm
+    ports:
+      - "4556:4556"
+    depends_on:
+      opal-rm-db:
+        condition: service_healthy
+    volumes:
+      - ./docker/local-secrets/app-insights-connection-string:/mnt/secrets/opal/app-insights-connection-string:ro
+
+  opal-rm-db:
+    container_name: opal-rm-db
+    image: postgres:17.5
+    restart: always
+    environment:
+      POSTGRES_DB: opal-rm-db
+      POSTGRES_USER: opal-rm
+      POSTGRES_PASSWORD: opal-rm
+    ports:
+      - "5437:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opal-rm -d opal-rm-db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - opal-rm-db-data:/var/lib/postgresql/data
+
+volumes:
+  opal-rm-db-data:

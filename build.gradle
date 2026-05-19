@@ -1,7 +1,14 @@
+buildscript {
+  dependencies {
+    classpath("org.flywaydb:flyway-database-postgresql:12.4.0")
+  }
+}
+
 plugins {
   id 'application'
   id 'jacoco'
   id 'io.spring.dependency-management' version '1.1.7'
+  id 'org.flywaydb.flyway' version '12.4.0'
   id 'org.springframework.boot' version '4.0.5'
   id 'uk.gov.hmcts.java' version '0.12.68'
 }
@@ -51,7 +58,14 @@ dependencyCheck {
 dependencies {
   implementation 'org.springframework.boot:spring-boot-starter-web'
   implementation 'org.springframework.boot:spring-boot-starter-actuator'
+  implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+  implementation 'org.springframework.boot:spring-boot-flyway'
   implementation 'uk.gov.hmcts:spring-exception-handler:1.0.1'
+  implementation 'org.flywaydb:flyway-core:12.4.0'
+  runtimeOnly('org.flywaydb:flyway-database-postgresql:12.4.0') {
+    exclude group: 'org.flywaydb', module: 'flyway-core'
+  }
+  implementation 'org.postgresql:postgresql'
 
   compileOnly "org.projectlombok:lombok:${lombokVersion}"
   annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
@@ -67,6 +81,23 @@ dependencies {
 
 application {
   mainClass.set('uk.gov.hmcts.opal.rm.Application')
+}
+
+bootJar {
+  archiveFileName = 'opal-rm-service.jar'
+
+  manifest {
+    attributes('Implementation-Version': project.version.toString())
+  }
+}
+
+flyway {
+  url = System.getenv('FLYWAY_URL')
+  user = System.getenv('FLYWAY_USER')
+  password = System.getenv('FLYWAY_PASSWORD')
+  locations = System.getenv('FLYWAY_LOCATIONS')
+  baselineOnMigrate = true
+  baselineVersion = '000'
 }
 
 wrapper {
