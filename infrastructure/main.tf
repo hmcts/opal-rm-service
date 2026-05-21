@@ -17,9 +17,9 @@ module "opal-rm-db" {
   source = "git@github.com:hmcts/terraform-module-postgresql-flexible?ref=master"
   env    = var.env
 
-  product       = var.product
-  component     = var.component
-  business_area = "sds"
+  product         = var.product
+  component       = var.component
+  business_area   = "sds"
   pgsql_databases = var.pgsql_databases
 
   pgsql_version = "17"
