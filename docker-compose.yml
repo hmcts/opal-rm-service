@@ -22,8 +22,6 @@ services:
     depends_on:
       opal-rm-db:
         condition: service_healthy
-    volumes:
-      - ./docker/local-secrets/app-insights-connection-string:/mnt/secrets/opal/app-insights-connection-string:ro
 
   opal-rm-db:
     container_name: opal-rm-db
