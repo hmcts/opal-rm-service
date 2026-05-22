@@ -100,6 +100,12 @@ tasks.register('smoke', Test) {
   classpath = sourceSets.smokeTest.runtimeClasspath
 }
 
+tasks.register('printVersionInit') {
+  doLast {
+    print project.version
+  }
+}
+
 jacocoTestReport {
   executionData(test, integration)
   reports {
@@ -122,6 +128,7 @@ sonarqube {
   properties {
     property "sonar.projectName", "HMCTS :: opal-rm-service"
     property "sonar.projectKey", "uk.gov.hmcts:opal-rm-service"
+    property "sonar.organization", "hmcts"
     property "sonar.gradle.skipCompile", "true"
   }
 }
