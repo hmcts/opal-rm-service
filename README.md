@@ -28,6 +28,13 @@ Check health:
 curl http://localhost:4556/health
 ```
 
+OpenAPI and Swagger UI are available when the app is running:
+
+```bash
+curl http://localhost:4556/v3/api-docs
+open http://localhost:4556/swagger-ui/index.html
+```
+
 Inspect the bootstrap table:
 
 ```bash
@@ -65,3 +72,7 @@ If you only want the database in Docker and prefer to run the app on the host:
 ```bash
 docker compose up -d opal-rm-db
 ```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

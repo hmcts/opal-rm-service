@@ -1,0 +1,14 @@
+#!groovy
+
+properties([
+  // H allows a predefined but random minute.
+  pipelineTriggers([cron('H 07 * * 1-5')])
+])
+
+@Library("Infrastructure")
+
+def type = "java"
+def product = "opal"
+def component = "rm-service"
+
+withNightlyPipeline(type, product, component) {}

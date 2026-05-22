@@ -1,0 +1,15 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: opal-rm-service
+  description: Opal Reciprocal Maintenance service
+  annotations:
+    jenkins.io/job-full-name: cft:HMCTS_opal-rm-service
+    github.com/project-slug: HMCTS/opal-rm-service
+  tags:
+    - java
+spec:
+  type: service
+  system: opal
+  lifecycle: experimental
+  owner: dts_opal_dev

@@ -1,0 +1,12 @@
+#!groovy
+// If this is a new microservice and you want it to run in Jenkins,
+// follow the standard HMCTS onboarding steps:
+// https://hmcts.github.io/cloud-native-platform/new-component/github-repo.html
+
+@Library("Infrastructure")
+
+def type = "java"
+def product = "opal"
+def component = "rm-service"
+
+withPipeline(type, product, component) {}
