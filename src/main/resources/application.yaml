@@ -8,6 +8,9 @@ hmcts:
       enable-exception-handler: true
 
 management:
+  health:
+    redis:
+      enabled: ${opal.redis.enabled:false}
   endpoint:
     health:
       show-details: "always"
@@ -61,6 +64,9 @@ spring:
         jdbc:
           lob:
             non_contextual_creation: true
+  data:
+    redis:
+      url: ${REDIS_CONNECTION_STRING:redis://localhost:6379}
   flyway:
     url: ${spring.datasource.url}
     user: ${spring.datasource.username}
@@ -84,6 +90,8 @@ launchdarkly:
 opal:
   azure:
     active-directory-justice-auth-uri: https://login.microsoftonline.com
+  redis:
+    enabled: ${OPAL_REDIS_ENABLED:false}
   testing-support-endpoints:
     enabled: ${TESTING_SUPPORT_ENDPOINTS_ENABLED:true}
   common:
