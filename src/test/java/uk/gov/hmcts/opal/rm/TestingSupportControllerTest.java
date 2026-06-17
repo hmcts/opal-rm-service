@@ -41,13 +41,23 @@ import uk.gov.hmcts.opal.common.user.authorisation.model.UserState;
 @AutoConfigureMockMvc
 class TestingSupportControllerTest {
 
-    private static final String AUTH_CHECK_PATH = "/testing-support/auth-check";
+    private static final String PING_PATH = "/testing-support/ping";
+    private static final String AUTH_CHECK_PATH = "/testing-support/auth/check";
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
     private UserStateClientService userStateClientService;
+
+    @Test
+    void shouldAllowPingWithoutToken() throws Exception {
+        MvcResult response = mockMvc.perform(get(PING_PATH))
+            .andExpect(status().isOk())
+            .andReturn();
+
+        assertThat(response.getResponse().getContentAsString()).contains("\"status\":\"ok\"");
+    }
 
     @Test
     void shouldRejectAuthCheckWithoutToken() throws Exception {

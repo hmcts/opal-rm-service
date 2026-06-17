@@ -35,7 +35,8 @@ vars:secret [
 5. Run the `User Service/Get test user token` request, then copy the `access_token`
    value from the response into the `BEARER_TOKEN` secret in your local environment
 
-6. Run `RM/auth-check` to verify that RM accepts the token and can resolve user state
+6. Run `RM/ping` to verify the public testing-support endpoint is up
+7. Run `RM/auth-check` to verify that RM accepts the token and can resolve user state
 
 ## Files to Commit
 

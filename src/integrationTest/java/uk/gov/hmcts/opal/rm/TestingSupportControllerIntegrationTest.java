@@ -1,6 +1,8 @@
 package uk.gov.hmcts.opal.rm;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
@@ -23,7 +25,6 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import java.time.Instant;
 import java.util.Date;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,15 +35,21 @@ import org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfigur
 import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.cache.CacheManager;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.http.HttpHeaders;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest
-@ActiveProfiles("integration")
+@SpringBootTest(properties = {
+    "management.endpoint.health.group.readiness.include=readinessState",
+    "management.health.redis.enabled=false",
+    "opal.testing-support-endpoints.enabled=true",
+    "launchdarkly.offline-mode=true",
+    "spring.security.oauth2.client.registration.internal-azure-ad.client-id=test-client-id"
+})
 @ImportAutoConfiguration(exclude = {
     DataSourceAutoConfiguration.class,
     HibernateJpaAutoConfiguration.class,
@@ -52,11 +59,12 @@ import org.springframework.test.web.servlet.MockMvc;
 @SuppressWarnings("java:S1075")
 class TestingSupportControllerIntegrationTest {
 
-    private static final String AUTH_CHECK_PATH = "/testing-support/auth-check";
+    private static final String PING_PATH = "/testing-support/ping";
+    private static final String AUTH_CHECK_PATH = "/testing-support/auth/check";
     private static final String AUTH_HEADER_PREFIX = "Bearer ";
     private static final String ISSUER_URI = "/issuer";
     private static final String JWK_SET_PATH = "/oauth2/jwks.json";
-    private static final String USER_STATE_PATH = "/users/0/state";
+    private static final String USER_STATE_PATH = "/v2/users/0/state";
     private static final String CLIENT_ID = "test-client-id";
     private static final String PREFERRED_USERNAME = "opal-test@hmcts.net";
     private static final String TOKEN_SUBJECT = "user-123";
@@ -70,28 +78,36 @@ class TestingSupportControllerIntegrationTest {
           "name": "Opal Test",
           "status": "ACTIVE",
           "version": 1,
-          "business_unit_users": [
-            {
-              "business_unit_user_id": "BUU-42",
-              "business_unit_id": 42,
-              "permissions": [
+          "domains": {
+            "maintenance": {
+              "business_unit_users": [
                 {
-                  "permission_id": 7,
-                  "permission_name": "RM Test Permission"
+                  "business_unit_user_id": "BUU-42",
+                  "business_unit_id": 42,
+                  "permissions": [
+                    {
+                      "permission_id": 7,
+                      "permission_name": "RM Test Permission"
+                    }
+                  ]
                 }
               ]
             }
-          ]
+          }
         }
         """;
 
+    @MockitoBean
+    private StringRedisTemplate redisTemplate;
+
+    @MockitoBean
+    private ValueOperations<String, String> valueOperations;
+
     private final MockMvc mockMvc;
-    private final CacheManager cacheManager;
 
     @Autowired
-    TestingSupportControllerIntegrationTest(MockMvc mockMvc, CacheManager cacheManager) {
+    TestingSupportControllerIntegrationTest(MockMvc mockMvc) {
         this.mockMvc = mockMvc;
-        this.cacheManager = cacheManager;
     }
 
     @DynamicPropertySource
@@ -119,12 +135,20 @@ class TestingSupportControllerIntegrationTest {
     void setUp() {
         WIRE_MOCK_SERVER.resetAll();
         stubJwkEndpoint();
-        clearUserStateCache();
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(anyString())).thenReturn(null);
     }
 
     @AfterAll
     static void tearDown() {
         WIRE_MOCK_SERVER.stop();
+    }
+
+    @Test
+    void shouldAllowPingWithoutToken() throws Exception {
+        mockMvc.perform(get(PING_PATH))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("ok"));
     }
 
     @Test
@@ -149,7 +173,7 @@ class TestingSupportControllerIntegrationTest {
     }
 
     @Test
-    void shouldReturnAuthenticatedSummaryWithoutUserStateWhenUserServiceReturnsNotFound() throws Exception {
+    void shouldRejectTokenWhenUserServiceReturnsNotFound() throws Exception {
         String token = signedToken(Instant.now().plusSeconds(300));
 
         WIRE_MOCK_SERVER.stubFor(com.github.tomakehurst.wiremock.client.WireMock.get(urlEqualTo(USER_STATE_PATH))
@@ -157,13 +181,7 @@ class TestingSupportControllerIntegrationTest {
 
         mockMvc.perform(get(AUTH_CHECK_PATH)
                 .header(HttpHeaders.AUTHORIZATION, AUTH_HEADER_PREFIX + token))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.principalName").value(TOKEN_SUBJECT))
-            .andExpect(jsonPath("$.authenticated").value(true))
-            .andExpect(jsonPath("$.userStateFound").value(false))
-            .andExpect(jsonPath("$.userId").value(Matchers.nullValue()))
-            .andExpect(jsonPath("$.userName").value(Matchers.nullValue()))
-            .andExpect(jsonPath("$.businessUnitIds").isEmpty());
+            .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -179,13 +197,6 @@ class TestingSupportControllerIntegrationTest {
         String jwkResponse = "{\"keys\": [%s]}".formatted(RSA_KEY.toPublicJWK().toJSONString());
         WIRE_MOCK_SERVER.stubFor(com.github.tomakehurst.wiremock.client.WireMock.get(urlEqualTo(JWK_SET_PATH))
             .willReturn(okJson(jwkResponse)));
-    }
-
-    private void clearUserStateCache() {
-        var userStateCache = cacheManager.getCache("userState");
-        if (userStateCache != null) {
-            userStateCache.clear();
-        }
     }
 
     private static String signedToken(Instant expiry) throws JOSEException {

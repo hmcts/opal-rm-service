@@ -87,4 +87,4 @@ opal:
   testing-support-endpoints:
     enabled: ${TESTING_SUPPORT_ENDPOINTS_ENABLED:true}
   common:
-    domain: rm
+    domain: maintenance

@@ -73,7 +73,8 @@ cp bruno/environments/env.bru.template bruno/environments/local.bru
 6. Run `User Service/Get test user token`, then copy the returned `access_token`
    into the `BEARER_TOKEN` secret in your Bruno environment
 
-7. Run `RM/auth-check` and confirm RM returns an authenticated summary with
+7. Run `RM/ping` first to confirm the public test-support surface is up, then run
+   `RM/auth-check` and confirm RM returns an authenticated summary with
    resolved user-state details
 
 8. You can also run `health/health` to confirm RM itself is reachable before

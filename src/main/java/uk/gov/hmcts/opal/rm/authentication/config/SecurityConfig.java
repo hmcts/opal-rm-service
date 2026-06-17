@@ -1,28 +1,43 @@
 package uk.gov.hmcts.opal.rm.authentication.config;
 
-import static org.springframework.security.config.Customizer.withDefaults;
-
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.security.autoconfigure.web.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.FormLoginConfigurer;
 import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtIssuerAuthenticationManagerResolver;
 import org.springframework.security.web.SecurityFilterChain;
+import uk.gov.hmcts.opal.common.config.OpalCommonConfiguration;
+import uk.gov.hmcts.opal.common.spring.security.OpalJwtAuthenticationProvider;
 import uk.gov.hmcts.opal.common.user.authentication.exception.CustomAuthenticationExceptions;
+import uk.gov.hmcts.opal.common.user.authentication.exception.CustomOauth2AuthenticationEntryPoint;
+import uk.gov.hmcts.opal.common.user.authorisation.client.service.UserStateClientService;
+import uk.gov.hmcts.opal.common.user.authorisation.model.Domain;
 import uk.gov.hmcts.opal.rm.authentication.config.internal.InternalAuthConfigurationProperties;
 import uk.gov.hmcts.opal.rm.authentication.config.internal.InternalAuthProviderConfigurationProperties;
 
 @Configuration
+@EnableWebSecurity
 @RequiredArgsConstructor
+@Profile("!integration")
 public class SecurityConfig {
+
+    private final CustomAuthenticationExceptions customAuthenticationExceptions;
+    private final CustomOauth2AuthenticationEntryPoint customOauth2AuthenticationEntryPoint;
 
     private static final String[] AUTH_WHITELIST = {
         "/swagger-ui.html",
@@ -31,21 +46,26 @@ public class SecurityConfig {
         "/v3/**",
         "/favicon.ico",
         "/health/**",
+        "/mappings",
         "/info",
+        "/metrics",
+        "/metrics/**",
+        "/s2s/**",
         "/"
     };
 
-    private final CustomAuthenticationExceptions customAuthenticationExceptions;
-
     @Bean
     @SuppressWarnings("squid:S4502")
-    public SecurityFilterChain filterChain(HttpSecurity http) {
+    public SecurityFilterChain filterChain(
+        HttpSecurity http,
+        JwtIssuerAuthenticationManagerResolver jwtIssuerAuthenticationManagerResolver) {
         try {
             applyCommonConfig(http)
                 .authorizeHttpRequests(authorize ->
                     authorize.requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
                         .requestMatchers(AUTH_WHITELIST).permitAll()
-                        .requestMatchers("/testing-support/**").authenticated()
+                        .requestMatchers("/testing-support/auth/**").authenticated()
+                        .requestMatchers("/testing-support/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptionHandling ->
@@ -55,8 +75,8 @@ public class SecurityConfig {
                 )
                 .oauth2ResourceServer(oauth2 ->
                     oauth2
-                        .authenticationEntryPoint(customAuthenticationExceptions)
-                        .jwt(withDefaults())
+                        .authenticationManagerResolver(jwtIssuerAuthenticationManagerResolver)
+                        .authenticationEntryPoint(customOauth2AuthenticationEntryPoint)
                 );
 
             return http.build();
@@ -66,7 +86,34 @@ public class SecurityConfig {
     }
 
     @Bean
-    JwtDecoder internalJwtDecoder(
+    JwtIssuerAuthenticationManagerResolver jwtIssuerAuthenticationManagerResolver(
+        InternalAuthConfigurationProperties authProps,
+        OpalJwtAuthenticationProvider opalJwtAuthenticationProvider) {
+
+        AuthenticationManager manager = opalJwtAuthenticationProvider::authenticate;
+        Map<String, AuthenticationManager> managers = Map.of(authProps.getIssuerUri(), manager);
+        return new JwtIssuerAuthenticationManagerResolver(managers::get);
+    }
+
+    @Bean
+    OpalJwtAuthenticationProvider opalJwtAuthenticationProvider(
+        NimbusJwtDecoder internalJwtDecoder,
+        UserStateClientService userStateClientService,
+        JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter,
+        OpalCommonConfiguration commonConfiguration) {
+
+        Domain domain = Domain.findByDisplayName(commonConfiguration.getDomain());
+
+        return new OpalJwtAuthenticationProvider(
+            internalJwtDecoder,
+            userStateClientService,
+            jwtGrantedAuthoritiesConverter,
+            domain
+        );
+    }
+
+    @Bean
+    NimbusJwtDecoder internalJwtDecoder(
         InternalAuthProviderConfigurationProperties providerProps,
         InternalAuthConfigurationProperties authProps) {
 
@@ -74,8 +121,15 @@ public class SecurityConfig {
             .jwsAlgorithm(SignatureAlgorithm.RS256)
             .build();
 
-        jwtDecoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(authProps.getIssuerUri()));
+        OAuth2TokenValidator<Jwt> jwtValidator =
+            JwtValidators.createDefaultWithIssuer(authProps.getIssuerUri());
+        jwtDecoder.setJwtValidator(jwtValidator);
         return jwtDecoder;
+    }
+
+    @Bean
+    JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter() {
+        return new JwtGrantedAuthoritiesConverter();
     }
 
     private HttpSecurity applyCommonConfig(HttpSecurity http) {
