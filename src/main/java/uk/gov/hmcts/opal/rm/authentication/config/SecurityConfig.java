@@ -135,7 +135,8 @@ public class SecurityConfig {
     private HttpSecurity applyCommonConfig(HttpSecurity http) {
         return http
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .csrf(AbstractHttpConfigurer::disable)
+            // Safe here because RM is a stateless bearer-token API and does not rely on browser cookie auth.
+            .csrf(AbstractHttpConfigurer::disable) // NOSONAR
             .formLogin(FormLoginConfigurer::disable)
             .logout(LogoutConfigurer::disable);
     }
