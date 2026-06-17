@@ -168,6 +168,10 @@ dependencies {
   implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2'
   implementation 'com.github.hmcts.java-logging:logging:8.0.0'
   implementation 'uk.gov.hmcts:opal-common-lib:0.3.9'
+  implementation('uk.gov.hmcts:opal-logging-service-integration-lib:0.0.10') {
+    exclude group: 'com.microsoft.azure', module: 'applicationinsights-spring-boot-starter'
+    exclude group: 'org.springframework.boot'
+  }
   implementation 'uk.gov.hmcts:spring-exception-handler:1.0.1'
   implementation 'org.flywaydb:flyway-core:12.4.0'
   runtimeOnly('org.flywaydb:flyway-database-postgresql:12.4.0') {

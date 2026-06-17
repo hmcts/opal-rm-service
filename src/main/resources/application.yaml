@@ -79,6 +79,13 @@ user:
   service:
     url: ${OPAL_USER_SERVICE_API_URL:http://localhost:4555}
 
+logging-service:
+  pdpl:
+    async:
+      protocol: ${SERVICEBUS_LOGGING_PDPL_PROTOCOL:amqp}
+      connection-string: ${SERVICEBUS_CONNECTION_STRING:Endpoint=sb://localhost/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=local;UseDevelopmentEmulator=true}
+      queue-name: ${SERVICEBUS_LOGGING_PDPL_QUEUE_NAME:logging-pdpl}
+
 launchdarkly:
   sdk-key: ${LAUNCH_DARKLY_SDK_KEY:}
   offline-mode: ${LAUNCH_DARKLY_OFFLINE_MODE:false}
