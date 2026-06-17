@@ -1,0 +1,26 @@
+management:
+  endpoint:
+    health:
+      group:
+        readiness:
+          include: readinessState
+  health:
+    redis:
+      enabled: false
+
+launchdarkly:
+  offline-mode: true
+
+opal:
+  testing-support-endpoints:
+    enabled: true
+
+spring:
+  cache:
+    type: simple
+  security:
+    oauth2:
+      client:
+        registration:
+          internal-azure-ad:
+            client-id: test-client-id
