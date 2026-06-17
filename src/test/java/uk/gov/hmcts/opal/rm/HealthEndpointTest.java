@@ -15,7 +15,11 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-@SpringBootTest(properties = "management.endpoint.health.group.readiness.include=readinessState")
+@SpringBootTest(properties = {
+    "management.endpoint.health.group.readiness.include=readinessState",
+    "management.health.redis.enabled=false",
+    "launchdarkly.offline-mode=true"
+})
 @ImportAutoConfiguration(exclude = {
     DataSourceAutoConfiguration.class,
     HibernateJpaAutoConfiguration.class,

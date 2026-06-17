@@ -53,6 +53,12 @@ ext {
   mapstructVersion = '1.6.3'
 }
 
+dependencyManagement {
+  imports {
+    mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2025.1.1'
+  }
+}
+
 repositories {
   mavenLocal()
   mavenCentral()
@@ -152,9 +158,16 @@ dependencies {
   implementation 'org.springframework.boot:spring-boot-starter-web'
   implementation 'org.springframework.boot:spring-boot-starter-actuator'
   implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+  implementation 'org.springframework.boot:spring-boot-starter-security'
+  implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+  implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+  implementation 'org.springframework.boot:spring-boot-starter-cache'
   implementation 'org.springframework.boot:spring-boot-flyway'
+  implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+  implementation 'io.github.openfeign:feign-jackson:13.6'
   implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2'
   implementation 'com.github.hmcts.java-logging:logging:8.0.0'
+  implementation 'uk.gov.hmcts:opal-common-lib:0.3.9'
   implementation 'uk.gov.hmcts:spring-exception-handler:1.0.1'
   implementation 'org.flywaydb:flyway-core:12.4.0'
   runtimeOnly('org.flywaydb:flyway-database-postgresql:12.4.0') {
@@ -171,7 +184,9 @@ dependencies {
   testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
   testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
   testImplementation 'org.springframework.boot:spring-boot-starter-test'
+  testImplementation 'org.springframework.security:spring-security-test'
   testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+  testImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.1'
 }
 
 application {

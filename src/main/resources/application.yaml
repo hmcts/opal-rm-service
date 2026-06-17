@@ -8,6 +8,9 @@ hmcts:
       enable-exception-handler: true
 
 management:
+  health:
+    redis:
+      enabled: ${opal.redis.enabled:false}
   endpoint:
     health:
       show-details: "always"
@@ -25,6 +28,21 @@ spring:
     import: "optional:configtree:/mnt/secrets/opal/"
   application:
     name: Opal RM Service
+  security:
+    oauth2:
+      client:
+        registration:
+          internal-azure-ad:
+            client-id: ${AAD_CLIENT_ID:00000000-0000-0000-0000-000000000000}
+            client-secret: ${AAD_CLIENT_SECRET:}
+            scope: api://${AAD_CLIENT_ID:00000000-0000-0000-0000-000000000000}/opalinternaluser
+            issuer-uri: https://sts.windows.net/${AAD_TENANT_ID:00000000-0000-0000-0000-000000000000}/
+            claims: preferred_username
+        provider:
+          internal-azure-ad-provider:
+            authorization-uri: ${opal.azure.active-directory-justice-auth-uri}/${AAD_TENANT_ID:00000000-0000-0000-0000-000000000000}/oauth2/v2.0/authorize
+            token-uri: ${opal.azure.active-directory-justice-auth-uri}/${AAD_TENANT_ID:00000000-0000-0000-0000-000000000000}/oauth2/v2.0/token
+            jwk-set-uri: ${opal.azure.active-directory-justice-auth-uri}/${AAD_TENANT_ID:00000000-0000-0000-0000-000000000000}/discovery/v2.0/keys
   datasource:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://${OPAL_RM_DB_HOST:localhost}:${OPAL_RM_DB_PORT:5437}/${OPAL_RM_DB_NAME:opal-rm-db}${OPAL_RM_DB_OPTIONS:}
@@ -46,6 +64,9 @@ spring:
         jdbc:
           lob:
             non_contextual_creation: true
+  data:
+    redis:
+      url: ${REDIS_CONNECTION_STRING:redis://localhost:6379}
   flyway:
     url: ${spring.datasource.url}
     user: ${spring.datasource.username}
@@ -53,3 +74,25 @@ spring:
     locations: ${FLYWAY_LOCATIONS:classpath:db/migration/allEnvs}
     baseline-on-migrate: true
     ignore-migration-patterns: "*:missing"
+
+user:
+  service:
+    url: ${OPAL_USER_SERVICE_API_URL:http://localhost:4555}
+
+launchdarkly:
+  sdk-key: ${LAUNCH_DARKLY_SDK_KEY:}
+  offline-mode: ${LAUNCH_DARKLY_OFFLINE_MODE:false}
+  env: ${LAUNCH_DARKLY_ENV:default}
+  enabled: ${LAUNCH_DARKLY_ENABLED:true}
+  file:
+    - ${LAUNCH_DARKLY_FILE:bin/utils/launchdarkly-flags.json}
+
+opal:
+  azure:
+    active-directory-justice-auth-uri: https://login.microsoftonline.com
+  redis:
+    enabled: ${OPAL_REDIS_ENABLED:false}
+  testing-support-endpoints:
+    enabled: ${TESTING_SUPPORT_ENDPOINTS_ENABLED:true}
+  common:
+    domain: maintenance

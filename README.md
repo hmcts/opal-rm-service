@@ -41,6 +41,45 @@ Inspect the bootstrap table:
 docker exec opal-rm-db psql -U opal-rm -d opal-rm-db -c "select * from rm_connectivity_probe;"
 ```
 
+## Manual auth testing with Bruno
+
+RM's `testing-support` auth endpoint is easiest to prove locally by running
+`opal-user-service` first, using it to obtain a real AAD-backed token, and then
+calling RM with that token.
+
+1. Start local RM dependencies and run RM:
+
+```bash
+docker compose up -d opal-rm-db
+./gradlew run
+```
+
+2. In `/Users/TomReed/opal/opal-user-service`, start `opal-user-service` locally and make sure it is reachable on `http://localhost:4555`
+
+3. Install Bruno if needed:
+
+```bash
+brew install --cask bruno
+```
+
+4. Create a local Bruno environment in this repo:
+
+```bash
+cp bruno/environments/env.bru.template bruno/environments/local.bru
+```
+
+5. Open `/Users/TomReed/opal/opal-rm-service/bruno` as a Bruno collection
+
+6. Run `User Service/Get test user token`, then copy the returned `access_token`
+   into the `BEARER_TOKEN` secret in your Bruno environment
+
+7. Run `RM/ping` first to confirm the public test-support surface is up, then run
+   `RM/auth-check` and confirm RM returns an authenticated summary with
+   resolved user-state details
+
+8. You can also run `health/health` to confirm RM itself is reachable before
+   testing the authenticated path
+
 ## Running with Docker
 
 Build the application JAR first:

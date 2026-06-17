@@ -34,3 +34,7 @@ build/
 # IDE
 .idea/
 *.iml
+
+# Bruno local environments
+bruno/environments/*.bru
+!bruno/environments/env.bru.template
