@@ -25,7 +25,7 @@ services:
 
   opal-rm-db:
     container_name: opal-rm-db
-    image: postgres:17.5
+    image: postgres:17.11
     restart: always
     environment:
       POSTGRES_DB: opal-rm-db
