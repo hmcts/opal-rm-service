@@ -3,7 +3,7 @@
 // follow the standard HMCTS onboarding steps:
 // https://hmcts.github.io/cloud-native-platform/new-component/github-repo.html
 
-@Library("Infrastructure")
+@Library("Infrastructure@2.4.4")
 
 def type = "java"
 def product = "opal"
