@@ -172,7 +172,7 @@ dependencies {
     exclude group: 'com.microsoft.azure', module: 'applicationinsights-spring-boot-starter'
     exclude group: 'org.springframework.boot'
   }
-  implementation 'uk.gov.hmcts:spring-exception-handler:1.0.1'
+  implementation 'uk.gov.hmcts:spring-exception-handler:1.0.3'
   implementation 'org.flywaydb:flyway-core:12.4.0'
   runtimeOnly('org.flywaydb:flyway-database-postgresql:12.4.0') {
     exclude group: 'org.flywaydb', module: 'flyway-core'
