@@ -165,7 +165,7 @@ dependencies {
   implementation 'org.springframework.boot:spring-boot-flyway'
   implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
   implementation 'io.github.openfeign:feign-jackson:13.6'
-  implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2'
+  implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
   implementation 'com.github.hmcts.java-logging:logging:8.0.0'
   implementation 'uk.gov.hmcts:opal-common-lib:0.3.9'
   implementation('uk.gov.hmcts:opal-logging-service-integration-lib:0.0.10') {
